@@ -1,0 +1,13 @@
+[package]
+name = "sideways"
+version = "0.1.0"
+authors = ["Ronja Koistinen <ronja.koistinen@kapsi.fi>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.7"
+
+[dependencies.sdl2]
+version = "0.32"
+default-features = false
+features = ["gfx", "image"]
