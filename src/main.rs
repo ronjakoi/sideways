@@ -38,7 +38,7 @@ struct Projectile<'a, 'b> {
 
 impl Velocity {
     pub fn new(x: i32, y: i32) -> Velocity {
-        Velocity { x: x, y: y }
+        Velocity { x, y }
     }
 
     pub fn apply_inertia(&mut self, axis: Axis) {
@@ -106,7 +106,7 @@ fn count_free_stars(stars: &[Option<Star>]) -> u32 {
 // If first_frame == true, spawn stars randomly on the x axis
 // as well as the y axis. Otherwise spawn them on the right edge of the screen,
 // i.e. y == WIDTH.
-fn spawn_new_stars(stars: &mut [Option<Star>], first_frame: bool) -> () {
+fn spawn_new_stars(stars: &mut [Option<Star>], first_frame: bool) {
     const SPEED_MIN: i32 = 3;
     const SPEED_MAX: i32 = 15;
     const STARS_PER_FRAME_MIN: u32 = 0;
@@ -149,7 +149,7 @@ fn spawn_new_stars(stars: &mut [Option<Star>], first_frame: bool) -> () {
     }
 }
 
-fn advance_stars(stars: &mut [Option<Star>]) -> () {
+fn advance_stars(stars: &mut [Option<Star>]) {
     for star in stars.iter_mut() {
         match star {
             None => {}
@@ -242,7 +242,7 @@ fn advance_projectiles(projectiles: &mut Vec<Projectile>) {
     projectiles.retain(|p| p.x < WIDTH as i32);
 }
 
-fn move_player(player_ship: &Texture, x: &mut i32, y: &mut i32, v: &mut Velocity) -> () {
+fn move_player(player_ship: &Texture, x: &mut i32, y: &mut i32, v: &mut Velocity) {
     let player_w = player_ship.query().width;
     let player_h = player_ship.query().height;
     let max_x = (WIDTH - 1 - player_w) as i32 - v.x;
@@ -281,7 +281,7 @@ fn draw_player(
 
 fn draw_projectiles(
     canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
-    projectiles: &Vec<Projectile>,
+    projectiles: &[Projectile],
 ) -> Result<(), String> {
     for proj in projectiles {
         let rect = Rect::new(
@@ -290,7 +290,7 @@ fn draw_projectiles(
             proj.sprite.query().width,
             proj.sprite.query().height,
         );
-        if let Err(_) = canvas.copy(proj.sprite, None, rect) {
+        if canvas.copy(proj.sprite, None, rect).is_err() {
             return Err(String::from("Could not draw projectile"));
         };
     }
@@ -378,7 +378,7 @@ fn main() -> Result<(), String> {
         draw_projectiles(&mut canvas, &player_projectiles)?;
         advance_projectiles(&mut player_projectiles);
         canvas.present();
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 50));
         first_frame = false;
     }
     Ok(())
