@@ -14,3 +14,13 @@ The easiest way to install these is by following the instructions at [rustup.rs]
 ## Building and running the game
 
 `cargo run`
+
+## Things not implemented
+
+* Enemies
+* Enemies that shoot
+* Terrain
+* Levels
+* Collision detection (killing enemies, dying from projectiles and terrain)
+* Menus
+* Sound effects and music
