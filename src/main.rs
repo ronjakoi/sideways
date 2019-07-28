@@ -1,12 +1,13 @@
 use rand::prelude::*;
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, LoadTexture};
-use sdl2::keyboard::{Keycode, Scancode};
+use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
+use sdl2::render::Texture;
 use std::cmp;
 use std::collections::HashSet;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy)]
 struct Star {
@@ -27,12 +28,17 @@ enum Axis {
     Y,
 }
 
+struct Projectile<'a, 'b> {
+    pub v: Velocity,
+    pub x: i32,
+    pub y: i32,
+    pub damage: i32,
+    pub sprite: &'a Texture<'b>,
+}
+
 impl Velocity {
     pub fn new(x: i32, y: i32) -> Velocity {
-        Velocity {
-            x: x,
-            y: y,
-        }
+        Velocity { x: x, y: y }
     }
 
     pub fn apply_inertia(&mut self, axis: Axis) {
@@ -49,7 +55,7 @@ impl Velocity {
                 } else if self.y > 0 {
                     self.y -= INERTIA;
                 }
-            },
+            }
             Axis::X => {
                 if self.x == -1 {
                     self.x = 0;
@@ -88,6 +94,8 @@ const HEIGHT: u32 = 384;
 const WIDTH: u32 = 512;
 const MAX_STARS: usize = 128;
 const PLAYER_MAX_SPEED: i32 = 6;
+const PLAYER_PROJECTILE_SPEED: i32 = 10;
+const SHOOT_DELAY: u64 = 80; // milliseconds
 
 // How many free star slots are there?
 fn count_free_stars(stars: &[Option<Star>]) -> u32 {
@@ -159,39 +167,82 @@ fn advance_stars(stars: &mut [Option<Star>]) -> () {
     }
 }
 
-fn handle_input(keycodes: &HashSet<Keycode>, v: &mut Velocity) {
-    const SPEED: i32 = 2;
+// Read keyboard input
+//
+// Move the ship with arrow keys
+// Shoot with S or Space
+//
+// Keep track of projectile shooting delay
+fn handle_input<'a, 'b>(
+    keycodes: &HashSet<Keycode>,
+    player_x: i32,
+    player_y: i32,
+    player_v: &mut Velocity,
+    projectiles: &mut Vec<Projectile<'a, 'b>>,
+    projectile_texture: &'a Texture<'b>,
+    last_shot: &mut Option<Instant>,
+) {
+    const SPEED: i32 = 2; // how much to increment player ship velocity each frame
     if !(keycodes.contains(&Keycode::Up) || keycodes.contains(&Keycode::Down)) {
-        v.apply_inertia(Axis::Y)
+        player_v.apply_inertia(Axis::Y)
     }
     if !(keycodes.contains(&Keycode::Left) || keycodes.contains(&Keycode::Right)) {
-        v.apply_inertia(Axis::X)
+        player_v.apply_inertia(Axis::X)
     }
 
     for k in keycodes {
-        *v +=  match k {
-            Keycode::Up    => Velocity::new(0, -SPEED),
-            Keycode::Down  => Velocity::new(0, SPEED),
-            Keycode::Left  => Velocity::new(-SPEED, 0),
-            Keycode::Right => Velocity::new(SPEED, 0),
-            _ => Velocity::new(0, 0),
+        match k {
+            Keycode::Up => *player_v += Velocity::new(0, -SPEED),
+            Keycode::Down => *player_v += Velocity::new(0, SPEED),
+            Keycode::Left => *player_v += Velocity::new(-SPEED, 0),
+            Keycode::Right => *player_v += Velocity::new(SPEED, 0),
+            Keycode::S | Keycode::Space => {
+                let now = Instant::now();
+                if (last_shot.is_some()
+                    && now - last_shot.unwrap() > Duration::from_millis(SHOOT_DELAY))
+                    || last_shot.is_none()
+                {
+                    projectiles.push(Projectile {
+                        v: Velocity {
+                            x: PLAYER_PROJECTILE_SPEED,
+                            y: 0,
+                        },
+                        // TODO: don't hardcode coordinates of projectile relative to ship
+                        x: player_x + 16,
+                        y: player_y + 3,
+                        damage: 10,
+                        sprite: &projectile_texture,
+                    });
+                    *last_shot = Some(now);
+                }
+            }
+            _ => {}
         };
     }
 
     // limit player ship's maximum speed
-    if v.x > PLAYER_MAX_SPEED {
-        v.x = PLAYER_MAX_SPEED;
-    } else if v.x < -PLAYER_MAX_SPEED {
-        v.x = -PLAYER_MAX_SPEED;
+    if player_v.x > PLAYER_MAX_SPEED {
+        player_v.x = PLAYER_MAX_SPEED;
+    } else if player_v.x < -PLAYER_MAX_SPEED {
+        player_v.x = -PLAYER_MAX_SPEED;
     }
-    if v.y > PLAYER_MAX_SPEED {
-        v.y = PLAYER_MAX_SPEED;
-    } else if v.y < -PLAYER_MAX_SPEED {
-        v.y = -PLAYER_MAX_SPEED;
+    if player_v.y > PLAYER_MAX_SPEED {
+        player_v.y = PLAYER_MAX_SPEED;
+    } else if player_v.y < -PLAYER_MAX_SPEED {
+        player_v.y = -PLAYER_MAX_SPEED;
     }
-
 }
-fn move_player(player_ship: &sdl2::render::Texture, x: &mut i32, y: &mut i32, v: &mut Velocity) -> () {
+
+fn advance_projectiles(projectiles: &mut Vec<Projectile>) {
+    for p in projectiles.into_iter() {
+        p.x += p.v.x;
+    }
+    // delete projectiles which have gone off the
+    // right-hand edge of the screen
+    projectiles.retain(|p| p.x < WIDTH as i32);
+}
+
+fn move_player(player_ship: &Texture, x: &mut i32, y: &mut i32, v: &mut Velocity) -> () {
     let player_w = player_ship.query().width;
     let player_h = player_ship.query().height;
     let max_x = (WIDTH - 1 - player_w) as i32 - v.x;
@@ -228,6 +279,24 @@ fn draw_player(
     canvas.copy(player_ship, None, rect)
 }
 
+fn draw_projectiles(
+    canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
+    projectiles: &Vec<Projectile>,
+) -> Result<(), String> {
+    for proj in projectiles {
+        let rect = Rect::new(
+            proj.x,
+            proj.y,
+            proj.sprite.query().width,
+            proj.sprite.query().height,
+        );
+        if let Err(_) = canvas.copy(proj.sprite, None, rect) {
+            return Err(String::from("Could not draw projectile"));
+        };
+    }
+    Ok(())
+}
+
 fn main() -> Result<(), String> {
     let sdl_context = sdl2::init().unwrap();
     let video = sdl_context.video().unwrap();
@@ -255,6 +324,10 @@ fn main() -> Result<(), String> {
     let mut player_v: Velocity = Velocity::new(0, 0);
     // image binaries currently not in source control
     let player_ship = texture_creator.load_texture("playership.png")?;
+    let player_shot = texture_creator.load_texture("playershot.png")?;
+
+    let mut player_projectiles: Vec<Projectile> = vec![];
+    let mut last_shot: Option<Instant> = None;
 
     // for the first frame we need to draw the star field differently
     let mut first_frame = true;
@@ -282,7 +355,15 @@ fn main() -> Result<(), String> {
             .filter_map(Keycode::from_scancode)
             .collect();
 
-        handle_input(&pressed_keys, &mut player_v);
+        handle_input(
+            &pressed_keys,
+            player_x,
+            player_y,
+            &mut player_v,
+            &mut player_projectiles,
+            &player_shot,
+            &mut last_shot,
+        );
         move_player(&player_ship, &mut player_x, &mut player_y, &mut player_v);
 
         spawn_new_stars(&mut stars, first_frame);
@@ -295,6 +376,8 @@ fn main() -> Result<(), String> {
         }
         advance_stars(&mut stars);
         draw_player(&mut canvas, &player_ship, player_x, player_y)?;
+        draw_projectiles(&mut canvas, &player_projectiles)?;
+        advance_projectiles(&mut player_projectiles);
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
         first_frame = false;
