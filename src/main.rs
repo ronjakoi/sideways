@@ -322,9 +322,8 @@ fn main() -> Result<(), String> {
     let mut player_x: i32 = WIDTH as i32 / 5;
     let mut player_y: i32 = WIDTH as i32 / 2;
     let mut player_v: Velocity = Velocity::new(0, 0);
-    // image binaries currently not in source control
-    let player_ship = texture_creator.load_texture("playership.png")?;
-    let player_shot = texture_creator.load_texture("playershot.png")?;
+    let player_ship = texture_creator.load_texture("assets/playership.png")?;
+    let player_shot = texture_creator.load_texture("assets/playershot.png")?;
 
     let mut player_projectiles: Vec<Projectile> = vec![];
     let mut last_shot: Option<Instant> = None;
