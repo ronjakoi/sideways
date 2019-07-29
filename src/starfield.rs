@@ -22,14 +22,16 @@ pub struct Starfield {
 
 impl Starfield {
     pub fn new() -> Self {
-        Starfield { stars: [None; MAX_STARS] }
+        let mut sf = Starfield { stars: [None; MAX_STARS] };
+        sf.spawn(true);
+        sf
     }
 
     // Spawn new stars to fill up the starfield
     // If first_frame == true, spawn stars randomly on the x axis
     // as well as the y axis. Otherwise spawn them on the right edge of the screen,
-    // i.e. y == WIDTH.
-    pub fn spawn(&mut self, first_frame: bool) {
+    // i.e. x == WIDTH.
+    fn spawn(&mut self, first_frame: bool) {
         const SPEED_MIN: i32 = 3;
         const SPEED_MAX: i32 = 15;
 
@@ -46,23 +48,24 @@ impl Starfield {
                 y: rng.gen_range(0, HEIGHT as i32),
             });
         }
+    }
 
+    pub fn spawn_new_stars(&mut self) {
+        self.spawn(false);
     }
 
     pub fn advance(&mut self) {
-        dbg!(self.stars[0]);
-        for i in 0..self.stars.len() {
-            match self.stars[i] {
+        for star in self.stars.iter_mut() {
+            match star {
                 None => {},
-                Some(mut star) => {
+                Some(s) => {
                     // If this star has gone off the left edge of the screen,
                     // reset it
-                    if star.x < 0 {
-                        self.stars[i] = None;
+                    if s.x < 0 {
+                        *star = None;
                         continue;
                     }
-                    let old_x = star.x;
-                    star.x += star.v.x;
+                    s.x += s.v.x;
                 }
             }
         }

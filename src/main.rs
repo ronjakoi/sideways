@@ -208,9 +208,6 @@ fn main() -> Result<(), String> {
     let mut player_projectiles: Vec<Projectile> = vec![];
     let mut last_shot: Option<Instant> = None;
 
-    // for the first frame we need to draw the star field differently
-    let mut first_frame = true;
-
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     'running: loop {
@@ -243,7 +240,7 @@ fn main() -> Result<(), String> {
         );
         player.apply_velocity();
 
-        starfield.spawn(first_frame);
+        starfield.spawn_new_stars();
 
         starfield.draw(&mut canvas)?;
         starfield.advance();
@@ -252,7 +249,6 @@ fn main() -> Result<(), String> {
         advance_projectiles(&mut player_projectiles);
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 50));
-        first_frame = false;
     }
     Ok(())
 }
