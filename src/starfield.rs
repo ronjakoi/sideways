@@ -1,10 +1,10 @@
+use crate::Velocity;
+use crate::{HEIGHT, WIDTH};
 use rand::prelude::*;
 use sdl2::pixels::Color;
-use sdl2::rect::{Point};
-use sdl2::render::{Canvas, Texture};
+use sdl2::rect::Point;
+use sdl2::render::{Canvas};
 use sdl2::video::Window;
-use crate::{WIDTH, HEIGHT};
-use crate::Velocity;
 
 const MAX_STARS: usize = 128;
 
@@ -22,7 +22,9 @@ pub struct Starfield {
 
 impl Starfield {
     pub fn new() -> Self {
-        let mut sf = Starfield { stars: [None; MAX_STARS] };
+        let mut sf = Starfield {
+            stars: [None; MAX_STARS],
+        };
         sf.spawn(true);
         sf
     }
@@ -57,7 +59,7 @@ impl Starfield {
     pub fn advance(&mut self) {
         for star in self.stars.iter_mut() {
             match star {
-                None => {},
+                None => {}
                 Some(s) => {
                     // If this star has gone off the left edge of the screen,
                     // reset it
@@ -74,10 +76,9 @@ impl Starfield {
     pub fn draw(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
         for s in self.stars.iter().filter_map(|&x| x) {
             canvas.set_draw_color(s.color);
-            if canvas
-                .draw_point(Point::new(s.x, s.y)).is_err() {
-                    return Err(String::from("Could not draw stars"));
-                }
+            if canvas.draw_point(Point::new(s.x, s.y)).is_err() {
+                return Err(String::from("Could not draw stars"));
+            }
         }
         Ok(())
     }

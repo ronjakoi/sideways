@@ -1,11 +1,9 @@
-use rand::prelude::*;
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, LoadTexture};
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use sdl2::rect::{Point, Rect};
+use sdl2::rect::{Rect};
 use sdl2::render::Texture;
-use std::cmp;
 use std::collections::HashSet;
 use std::time::{Duration, Instant};
 
@@ -90,7 +88,6 @@ const WIDTH: u32 = 512;
 const PLAYER_MAX_SPEED: i32 = 6;
 const PLAYER_PROJECTILE_SPEED: i32 = 10;
 const SHOOT_DELAY: u64 = 80; // milliseconds
-
 
 // Read keyboard input
 //

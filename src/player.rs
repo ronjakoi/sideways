@@ -1,7 +1,7 @@
+use crate::Velocity;
 use sdl2::rect::Rect;
 use sdl2::render::{Canvas, Texture};
 use sdl2::video::Window;
-use crate::Velocity;
 
 pub struct Player<'a, 'b> {
     sprite: &'a Texture<'b>,
@@ -15,7 +15,7 @@ pub struct Player<'a, 'b> {
 impl<'a, 'b> Player<'a, 'b> {
     pub fn from_sprite(sprite: &'a Texture<'b>) -> Self {
         Player {
-            sprite: sprite,
+            sprite,
             x: crate::WIDTH as i32 / 5,
             y: crate::HEIGHT as i32 / 2,
             v: Velocity::new(0, 0),
