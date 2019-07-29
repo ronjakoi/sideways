@@ -10,14 +10,7 @@ use std::collections::HashSet;
 use std::time::{Duration, Instant};
 
 mod player;
-
-#[derive(Clone, Copy)]
-struct Star {
-    pub color: Color,
-    pub speed: i32,
-    pub x: i32,
-    pub y: i32,
-}
+mod starfield;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Velocity {
@@ -94,80 +87,10 @@ impl std::ops::AddAssign for Velocity {
 
 const HEIGHT: u32 = 384;
 const WIDTH: u32 = 512;
-const MAX_STARS: usize = 128;
 const PLAYER_MAX_SPEED: i32 = 6;
 const PLAYER_PROJECTILE_SPEED: i32 = 10;
 const SHOOT_DELAY: u64 = 80; // milliseconds
 
-// How many free star slots are there?
-fn count_free_stars(stars: &[Option<Star>]) -> u32 {
-    stars.iter().filter(|x| x.is_none()).count() as u32
-}
-
-// Spawn a random number of new stars in the star field.
-// If first_frame == true, spawn stars randomly on the x axis
-// as well as the y axis. Otherwise spawn them on the right edge of the screen,
-// i.e. y == WIDTH.
-fn spawn_new_stars(stars: &mut [Option<Star>], first_frame: bool) {
-    const SPEED_MIN: i32 = 3;
-    const SPEED_MAX: i32 = 15;
-    const STARS_PER_FRAME_MIN: u32 = 0;
-    const STARS_PER_FRAME_MAX: u32 = 10;
-
-    let mut spawned_stars = 0;
-    let mut i = 0;
-    let mut rng = thread_rng();
-    let free_stars = count_free_stars(&stars);
-    if free_stars == 0 {
-        return;
-    }
-
-    let new_stars = if first_frame {
-        MAX_STARS as u32
-    } else {
-        rng.gen_range(
-            STARS_PER_FRAME_MIN,
-            cmp::min(free_stars, STARS_PER_FRAME_MAX + 1),
-        )
-    };
-    while i < MAX_STARS && spawned_stars < new_stars {
-        match stars[i] {
-            None => {
-                stars[i] = Some(Star {
-                    color: Color::RGB(200, 200, 200),
-                    speed: rng.gen_range(SPEED_MIN, SPEED_MAX + 1),
-                    x: if first_frame {
-                        rng.gen_range(0, WIDTH as i32)
-                    } else {
-                        WIDTH as i32 - 1
-                    },
-                    y: rng.gen_range(0, HEIGHT as i32),
-                });
-                spawned_stars += 1;
-            }
-            Some(_) => {}
-        }
-        i += 1;
-    }
-}
-
-fn advance_stars(stars: &mut [Option<Star>]) {
-    for star in stars.iter_mut() {
-        match star {
-            None => {}
-            Some(s) => {
-                // If this star has gone off the left edge of the screen,
-                // reset it
-                if s.x < 0 {
-                    *star = None;
-                    continue;
-                }
-
-                s.x -= s.speed;
-            }
-        }
-    }
-}
 
 // Read keyboard input
 //
@@ -276,10 +199,7 @@ fn main() -> Result<(), String> {
     let _image_context = sdl2::image::init(InitFlag::PNG)?;
     let texture_creator = canvas.texture_creator();
 
-    // A buffer of Option<Star>
-    // If an element is None, that slot in the buffer is available for
-    // spawning a new star.
-    let mut stars: [Option<Star>; MAX_STARS] = [None; MAX_STARS];
+    let mut starfield = starfield::Starfield::new();
 
     let player_ship = texture_creator.load_texture("assets/playership.png")?;
     let player_shot = texture_creator.load_texture("assets/playershot.png")?;
@@ -323,15 +243,10 @@ fn main() -> Result<(), String> {
         );
         player.apply_velocity();
 
-        spawn_new_stars(&mut stars, first_frame);
+        starfield.spawn(first_frame);
 
-        for s in stars.iter().filter_map(|&x| x) {
-            canvas.set_draw_color(s.color);
-            canvas
-                .draw_point(Point::new(s.x, s.y))
-                .or(Err("Unable to draw star\n"))?;
-        }
-        advance_stars(&mut stars);
+        starfield.draw(&mut canvas)?;
+        starfield.advance();
         player.draw(&mut canvas)?;
         draw_projectiles(&mut canvas, &player_projectiles)?;
         advance_projectiles(&mut player_projectiles);
