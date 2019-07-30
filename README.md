@@ -17,10 +17,11 @@ The easiest way to install these is by following the instructions at [rustup.rs]
 
 ## Things not implemented
 
-* Enemies
 * Enemies that shoot
+* More varied enemies
 * Terrain
 * Levels
-* Collision detection (killing enemies, dying from projectiles and terrain)
+* Dying
 * Menus
 * Sound effects and music
+* EXPLOSIONS
