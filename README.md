@@ -15,6 +15,10 @@ The easiest way to install these is by following the instructions at [rustup.rs]
 
 `cargo run`
 
+## How to play
+
+Use the arrow keys to fly your ship. Press S or Space to fire your weapon.
+
 ## Things not implemented
 
 * Enemies that shoot
