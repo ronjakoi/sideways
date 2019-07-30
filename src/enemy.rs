@@ -26,7 +26,7 @@ impl collide::Rectangle for Enemy<'_, '_> {
 impl<'a, 'b> Enemy<'a, 'b> {
     pub fn from_sprite(sprite: &'a Texture<'b>) -> Self {
         const MAX_SPEED: i32 = 4;
-        const MIN_SPEED: i32 = 2;
+        const MIN_SPEED: i32 = 1;
         let mut rng = thread_rng();
         let h = sprite.query().height;
         let w = sprite.query().width;

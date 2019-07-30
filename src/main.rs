@@ -180,13 +180,13 @@ fn main() -> Result<(), String> {
     let enemy_ship = texture_creator.load_texture("assets/enemyship.png")?;
     let mut player = player::Player::from_sprite(&player_ship);
 
-    let mut player_projectiles: Vec<Projectile> = vec![];
+    let mut player_projectiles: Vec<Projectile> = Vec::with_capacity(64);
     let mut last_shot: Option<Instant> = None;
 
     let mut enemies: Vec<enemy::Enemy> = vec![];
     // check once every second whether to spawn new enemy
     let mut enemy_tick = Instant::now();
-    let mut one_second = Duration::from_secs(1);
+    let one_second = Duration::from_secs(1);
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -231,7 +231,7 @@ fn main() -> Result<(), String> {
             enemy_tick = now;
         }
 
-        for (i, enemy) in enemies.iter_mut().enumerate() {
+        for enemy in &mut enemies {
             let mut hit_by_proj_idx: Option<usize> = None;
             for (i, proj) in player_projectiles.iter_mut().enumerate() {
                 if enemy.collide(proj) {
@@ -258,6 +258,7 @@ fn main() -> Result<(), String> {
         }
         canvas.present();
         enemies.retain(|x| x.is_alive() && x.is_in_screen());
+        player_projectiles.retain(|x| x.is_in_screen());
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 50));
     }
     Ok(())

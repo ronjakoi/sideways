@@ -24,9 +24,6 @@ impl collide::Rectangle for Projectile<'_, '_> {
 impl<'a, 'b> Projectile<'a, 'b> {
     pub fn advance(&mut self) {
         self.x += self.v.x;
-        if self.x >= WIDTH as i32 {
-            drop(self);
-        }
     }
 
     pub fn draw(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
@@ -35,5 +32,12 @@ impl<'a, 'b> Projectile<'a, 'b> {
             None,
             Rect::new(self.x, self.y, self.width, self.height),
         )
+    }
+
+    pub fn is_in_screen(&self) -> bool {
+        self.x >= -(self.width as i32)
+            && self.x <= WIDTH as i32
+            && self.y >= -(self.height as i32)
+            && self.y <= HEIGHT as i32
     }
 }

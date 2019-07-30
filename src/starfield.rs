@@ -3,7 +3,7 @@ use crate::{HEIGHT, WIDTH};
 use rand::prelude::*;
 use sdl2::pixels::Color;
 use sdl2::rect::Point;
-use sdl2::render::{Canvas};
+use sdl2::render::Canvas;
 use sdl2::video::Window;
 
 const MAX_STARS: usize = 128;
