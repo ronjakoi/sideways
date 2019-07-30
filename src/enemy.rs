@@ -1,6 +1,7 @@
-use crate::{Velocity, Axis};
+use crate::collide;
 use crate::Projectile;
-use crate::{WIDTH, HEIGHT};
+use crate::{Axis, Velocity};
+use crate::{HEIGHT, WIDTH};
 use rand::prelude::*;
 use sdl2::rect::Rect;
 use sdl2::render::{Canvas, Texture};
@@ -13,6 +14,13 @@ pub struct Enemy<'a, 'b> {
     width: u32,
     height: u32,
     v: Velocity,
+    alive: bool,
+}
+
+impl collide::Rectangle for Enemy<'_, '_> {
+    fn rect(&self) -> collide::Rect {
+        collide::Rect::new(self.x, self.y, self.width, self.height)
+    }
 }
 
 impl<'a, 'b> Enemy<'a, 'b> {
@@ -29,10 +37,8 @@ impl<'a, 'b> Enemy<'a, 'b> {
             height: h,
             x: (WIDTH - w) as i32,
             y: rng.gen_range(1, HEIGHT - h) as i32,
-            v: Velocity::new(
-                -rng.gen_range(MIN_SPEED, MAX_SPEED + 1),
-                0
-            ),
+            v: Velocity::new(-rng.gen_range(MIN_SPEED, MAX_SPEED + 1), 0),
+            alive: true,
         }
     }
 
@@ -41,16 +47,24 @@ impl<'a, 'b> Enemy<'a, 'b> {
         canvas.copy(self.sprite, None, rect)
     }
 
-    fn is_in_screen(&self) -> bool {
-        self.x >= -(self.width as i32) && self.x <= WIDTH as i32 &&
-        self.y >= -(self.height as i32) && self.y <= HEIGHT as i32
+    pub fn is_in_screen(&self) -> bool {
+        self.x >= -(self.width as i32)
+            && self.x <= WIDTH as i32
+            && self.y >= -(self.height as i32)
+            && self.y <= HEIGHT as i32
     }
 
     pub fn advance(&mut self) {
         self.x += self.v.x;
         self.y += self.v.y;
-        if !self.is_in_screen() {
-            drop(self);
-        }
     }
+
+    pub fn die(&mut self) {
+        self.alive = false;
+    }
+
+    pub fn is_alive(&self) -> bool {
+        self.alive
+    }
+
 }

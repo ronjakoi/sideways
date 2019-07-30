@@ -1,16 +1,21 @@
+use rand::prelude::*;
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, LoadTexture};
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use rand::prelude::*;
-use sdl2::rect::{Rect};
+use sdl2::rect::Rect;
 use sdl2::render::Texture;
 use std::collections::HashSet;
 use std::time::{Duration, Instant};
 
-mod player;
-mod starfield;
+mod collide;
 mod enemy;
+mod player;
+mod projectile;
+mod starfield;
+
+use collide::Collider;
+use projectile::Projectile;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Velocity {
@@ -21,14 +26,6 @@ pub struct Velocity {
 pub enum Axis {
     X,
     Y,
-}
-
-struct Projectile<'a, 'b> {
-    pub v: Velocity,
-    pub x: i32,
-    pub y: i32,
-    pub damage: i32,
-    pub sprite: &'a Texture<'b>,
 }
 
 impl Velocity {
@@ -90,7 +87,7 @@ const WIDTH: u32 = 512;
 const PLAYER_MAX_SPEED: i32 = 6;
 const PLAYER_PROJECTILE_SPEED: i32 = 10;
 const SHOOT_DELAY: u64 = 80; // milliseconds
-const ENEMY_SPAWN_CHANCE: f64 = 0.6;
+const ENEMY_SPAWN_CHANCE: f64 = 0.4;
 
 // Read keyboard input
 //
@@ -134,6 +131,8 @@ fn handle_input<'a, 'b>(
                         y: player.y + (player.height / 2) as i32,
                         damage: 10,
                         sprite: &projectile_texture,
+                        width: projectile_texture.query().width,
+                        height: projectile_texture.query().height,
                     });
                     *last_shot = Some(now);
                 }
@@ -153,33 +152,6 @@ fn handle_input<'a, 'b>(
     } else if player.v.y < -PLAYER_MAX_SPEED {
         player.v.y = -PLAYER_MAX_SPEED;
     }
-}
-
-fn advance_projectiles(projectiles: &mut Vec<Projectile>) {
-    for p in projectiles.into_iter() {
-        p.x += p.v.x;
-    }
-    // delete projectiles which have gone off the
-    // right-hand edge of the screen
-    projectiles.retain(|p| p.x < WIDTH as i32);
-}
-
-fn draw_projectiles(
-    canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
-    projectiles: &[Projectile],
-) -> Result<(), String> {
-    for proj in projectiles {
-        let rect = Rect::new(
-            proj.x,
-            proj.y,
-            proj.sprite.query().width,
-            proj.sprite.query().height,
-        );
-        if canvas.copy(proj.sprite, None, rect).is_err() {
-            return Err(String::from("Could not draw projectile"));
-        };
-    }
-    Ok(())
 }
 
 fn main() -> Result<(), String> {
@@ -259,15 +231,33 @@ fn main() -> Result<(), String> {
             enemy_tick = now;
         }
 
-        for enemy in &mut enemies {
+        for (i, enemy) in enemies.iter_mut().enumerate() {
+            let mut hit_by_proj_idx: Option<usize> = None;
+            for (i, proj) in player_projectiles.iter_mut().enumerate() {
+                if enemy.collide(proj) {
+                    enemy.die();
+                    hit_by_proj_idx = Some(i);
+                    break;
+                }
+            };
+            if let Some(i) = hit_by_proj_idx {
+                player_projectiles.remove(i);
+                continue;
+            }
+            if !enemy.is_alive() || !enemy.is_in_screen() {
+                continue;
+            }
             enemy.draw(&mut canvas)?;
             enemy.advance();
         }
 
         player.draw(&mut canvas)?;
-        draw_projectiles(&mut canvas, &player_projectiles)?;
-        advance_projectiles(&mut player_projectiles);
+        for proj in &mut player_projectiles {
+            proj.draw(&mut canvas)?;
+            proj.advance();
+        }
         canvas.present();
+        enemies.retain(|x| x.is_alive() && x.is_in_screen());
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 50));
     }
     Ok(())

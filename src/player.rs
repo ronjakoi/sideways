@@ -1,3 +1,4 @@
+use crate::collide;
 use crate::Velocity;
 use sdl2::rect::Rect;
 use sdl2::render::{Canvas, Texture};
@@ -10,6 +11,12 @@ pub struct Player<'a, 'b> {
     pub v: Velocity,
     pub width: u32,
     pub height: u32,
+}
+
+impl collide::Rectangle for Player<'_, '_> {
+    fn rect(&self) -> collide::Rect {
+        collide::Rect::new(self.x, self.y, self.width, self.height)
+    }
 }
 
 impl<'a, 'b> Player<'a, 'b> {
