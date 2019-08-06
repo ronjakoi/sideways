@@ -6,25 +6,28 @@ use rand::prelude::*;
 use sdl2::rect::Rect;
 use sdl2::render::{Canvas, Texture};
 use sdl2::video::Window;
+use std::time::{Duration, Instant};
 
 pub struct Enemy<'a, 'b> {
     sprite: &'a Texture<'b>,
     v: Velocity,
     alive: bool,
     pub shape: Shape,
+    pub shoot_freq: u64, // milliseconds
+    pub last_shot: Option<Instant>,
 }
 
 impl<'a, 'b> Enemy<'a, 'b> {
     pub fn from_sprite(sprite: &'a Texture<'b>) -> Self {
-        const MAX_SPEED: i32 = 4;
-        const MIN_SPEED: i32 = 1;
+        const MAX_SPEED: f64 = 4.0;
+        const MIN_SPEED: f64 = 1.0;
         let mut rng = thread_rng();
         let h = sprite.query().height;
         let w = sprite.query().width;
 
         Enemy {
             sprite,
-            v: Velocity::new(-rng.gen_range(MIN_SPEED, MAX_SPEED + 1), 0),
+            v: Velocity::new(-rng.gen_range(MIN_SPEED, MAX_SPEED + 1.0), 0.0),
             alive: true,
             shape: Shape::new_rectangle(
                 (WIDTH - w) as i32,
@@ -32,6 +35,8 @@ impl<'a, 'b> Enemy<'a, 'b> {
                 h,
                 w,
             ),
+            shoot_freq: 2000,
+            last_shot: None,
         }
     }
 

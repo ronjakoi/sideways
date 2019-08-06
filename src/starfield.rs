@@ -41,7 +41,7 @@ impl Starfield {
         for s in self.stars.iter_mut().filter(|x| x.is_none()) {
             *s = Some(Star {
                 color: Color::RGB(200, 200, 200),
-                v: Velocity::new(-rng.gen_range(SPEED_MIN, SPEED_MAX + 1), 0),
+                v: Velocity::new(-rng.gen_range(SPEED_MIN, SPEED_MAX + 1) as f64, 0.0),
                 x: if first_frame {
                     rng.gen_range(0, WIDTH as i32)
                 } else {
@@ -67,7 +67,7 @@ impl Starfield {
                         *star = None;
                         continue;
                     }
-                    s.x += s.v.x;
+                    s.x += s.v.x as i32;
                 }
             }
         }

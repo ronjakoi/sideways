@@ -2,7 +2,7 @@ use crate::Velocity;
 use crate::{enemy, player, projectile};
 use crate::{HEIGHT, WIDTH};
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum Shape {
     Point(Point),
     Circle(Circle),
@@ -10,19 +10,19 @@ pub enum Shape {
     Compound(Vec<Shape>),
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub struct Point {
     pub x: i32,
     pub y: i32,
 }
-#[derive(Eq, PartialEq, Clone, Copy)]
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub struct Rectangle {
     pub x: i32,
     pub y: i32,
     pub width: u32,
     pub height: u32,
 }
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub struct Circle {
     pub x: i32,
     pub y: i32,
@@ -105,8 +105,8 @@ impl Shape {
             Shape::Point(Point { x, y })
             | Shape::Circle(Circle { x, y, .. })
             | Shape::Rectangle(Rectangle { x, y, .. }) => {
-                *x += v.x;
-                *y += v.y;
+                *x += v.x.ceil() as i32;
+                *y += v.y.ceil() as i32;
             }
         }
     }
@@ -214,18 +214,14 @@ mod collide_shapes {
         let test_x = {
             if circle.x < rect.x {
                 rect.x
-            }
-            //else if circle.x > rect.x + rect.width as i32 { rect.x + rect.width as i32} };
-            else {
+            } else {
                 rect.x + rect.width as i32
             }
         };
 
         let test_y = if circle.y < rect.y {
             rect.y
-        }
-        //else if circle.y > rect.y + rect.height as i32 { rect.y + rect.height as i32};
-        else {
+        } else {
             rect.y + rect.height as i32
         };
 
