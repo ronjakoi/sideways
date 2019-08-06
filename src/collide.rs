@@ -68,8 +68,8 @@ impl Shape {
             Shape::Circle(c) => {
                 let box_x = c.x - c.r as i32;
                 let box_y = c.y - c.r as i32;
-                let box_w = box_x + (c.r * 2) as i32;
-                let box_h = box_y + (c.r * 2) as i32;
+                let box_w = c.r * 2;
+                let box_h = box_w;
                 Rectangle {
                     x: box_x,
                     y: box_y,
