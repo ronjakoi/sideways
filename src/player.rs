@@ -13,12 +13,6 @@ pub struct Player<'a, 'b> {
     pub height: u32,
 }
 
-impl collide::Rectangle for Player<'_, '_> {
-    fn rect(&self) -> collide::Rect {
-        collide::Rect::new(self.x, self.y, self.width, self.height)
-    }
-}
-
 impl<'a, 'b> Player<'a, 'b> {
     pub fn from_sprite(sprite: &'a Texture<'b>) -> Self {
         Player {

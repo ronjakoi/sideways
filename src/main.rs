@@ -85,7 +85,6 @@ impl std::ops::AddAssign for Velocity {
 const HEIGHT: u32 = 384;
 const WIDTH: u32 = 512;
 const PLAYER_MAX_SPEED: i32 = 6;
-const PLAYER_PROJECTILE_SPEED: i32 = 10;
 const SHOOT_DELAY: u64 = 80; // milliseconds
 const ENEMY_SPAWN_CHANCE: f64 = 0.4;
 
@@ -122,18 +121,7 @@ fn handle_input<'a, 'b>(
                     && now - last_shot.unwrap() > Duration::from_millis(SHOOT_DELAY))
                     || last_shot.is_none()
                 {
-                    projectiles.push(Projectile {
-                        v: Velocity {
-                            x: PLAYER_PROJECTILE_SPEED,
-                            y: 0,
-                        },
-                        x: player.x + player.width as i32,
-                        y: player.y + (player.height / 2) as i32,
-                        damage: 10,
-                        sprite: &projectile_texture,
-                        width: projectile_texture.query().width,
-                        height: projectile_texture.query().height,
-                    });
+                    projectiles.push(Projectile::from_sprite_rect(projectile_texture, &player));
                     *last_shot = Some(now);
                 }
             }
@@ -234,12 +222,12 @@ fn main() -> Result<(), String> {
         for enemy in &mut enemies {
             let mut hit_by_proj_idx: Option<usize> = None;
             for (i, proj) in player_projectiles.iter_mut().enumerate() {
-                if enemy.collide(proj) {
+                if enemy.collide(&proj.shape) {
                     enemy.die();
                     hit_by_proj_idx = Some(i);
                     break;
                 }
-            };
+            }
             if let Some(i) = hit_by_proj_idx {
                 player_projectiles.remove(i);
                 continue;

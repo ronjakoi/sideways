@@ -1,4 +1,4 @@
-use crate::collide;
+use crate::collide::Shape;
 use crate::Projectile;
 use crate::{Axis, Velocity};
 use crate::{HEIGHT, WIDTH};
@@ -8,19 +8,10 @@ use sdl2::render::{Canvas, Texture};
 use sdl2::video::Window;
 
 pub struct Enemy<'a, 'b> {
-    x: i32,
-    y: i32,
     sprite: &'a Texture<'b>,
-    width: u32,
-    height: u32,
     v: Velocity,
     alive: bool,
-}
-
-impl collide::Rectangle for Enemy<'_, '_> {
-    fn rect(&self) -> collide::Rect {
-        collide::Rect::new(self.x, self.y, self.width, self.height)
-    }
+    pub shape: Shape,
 }
 
 impl<'a, 'b> Enemy<'a, 'b> {
@@ -33,30 +24,34 @@ impl<'a, 'b> Enemy<'a, 'b> {
 
         Enemy {
             sprite,
-            width: w,
-            height: h,
-            x: (WIDTH - w) as i32,
-            y: rng.gen_range(1, HEIGHT - h) as i32,
             v: Velocity::new(-rng.gen_range(MIN_SPEED, MAX_SPEED + 1), 0),
             alive: true,
+            shape: Shape::new_rectangle(
+                (WIDTH - w) as i32,
+                rng.gen_range(1, HEIGHT - h) as i32,
+                h,
+                w,
+            ),
         }
     }
 
     pub fn draw(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
-        let rect = Rect::new(self.x, self.y, self.width, self.height);
+        let bounding_box = self.shape.get_box();
+        let rect = Rect::new(
+            bounding_box.x,
+            bounding_box.y,
+            bounding_box.width,
+            bounding_box.height,
+        );
         canvas.copy(self.sprite, None, rect)
     }
 
     pub fn is_in_screen(&self) -> bool {
-        self.x >= -(self.width as i32)
-            && self.x <= WIDTH as i32
-            && self.y >= -(self.height as i32)
-            && self.y <= HEIGHT as i32
+        self.shape.is_in_screen()
     }
 
     pub fn advance(&mut self) {
-        self.x += self.v.x;
-        self.y += self.v.y;
+        self.shape.advance(&self.v)
     }
 
     pub fn die(&mut self) {
@@ -66,5 +61,4 @@ impl<'a, 'b> Enemy<'a, 'b> {
     pub fn is_alive(&self) -> bool {
         self.alive
     }
-
 }
