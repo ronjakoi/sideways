@@ -40,7 +40,7 @@ impl Starfield {
         let mut rng = thread_rng();
         for s in self.stars.iter_mut().filter(|x| x.is_none()) {
             *s = Some(Star {
-                color: Color::RGB(200, 200, 200),
+                color: Color::RGB(0xca, 0xca, 0xca),
                 v: Velocity::new(-rng.gen_range(SPEED_MIN, SPEED_MAX + 1) as f64, 0.0),
                 x: if first_frame {
                     rng.gen_range(0, WIDTH as i32)
